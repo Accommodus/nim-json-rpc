@@ -204,5 +204,83 @@ macro rpc*(server: RpcRouter, path: static[string], body: untyped): untyped =
 
   when defined(nimDumpRpcs):
     echo "\n", path, ": ", result.repr
+  
+#var server = RpcRouter()
+
+proc processTree(server: RpcRouter, list: NimNode, pathList: seq[string]): NimNode =
+  result = newStmtList()
+  for node in list:
+    case node.kind:
+    of RoutineNodes:
+      let 
+        name = node.name.strVal
+        t
+
+macro testMac(body: untyped): untyped =
+  for node in body:
+    echo node.kind
+
+dumpLisp:
+  proc null_test(A: string): int =
+      echo "testing"
+      return 2
+
+  Parent1:
+    proc A_test(A: string): int =
+      echo "testing"
+      return 2
+
+    proc AB_test(A: string): int =
+      echo "testing"
+      return 2
+
+      Parent11:
+        proc B_test(A: string): int =
+          echo "testing"
+          return 2
+
+  Parent2:
+    proc B_test(A: string): int =
+      echo "testing"
+      return 2
+
+#[
+dumpTree:
+  server.rpc() do(A: int, B: string) -> string:
+    result = $param1 & " " & $param2 
+
+server.block_rpc:
+  proc A_test(A: string): int =
+    echo "testing"
+    return 2
+
+macro processProc(server: RpcRouter, current: string, node: NimNode): untyped =
+  node[0].expectKind(nnkIdent)
+  let 
+    name = node[0].strVal
+    path = current & '/' & name
+
+  return server.rpc(path, node)
+
+macro blockRpc(server: RpcRouter, body: untyped): untyped =
+  for node in body:
+    if node.kind in RoutineNodes:
+      server.processProc("", node)
+
+macro block_rpc(server: RpcRouter, body: untyped): untyped =
+  for node in body:
+    if node.kind in RoutineNodes:
+      node[0].expectKind(nnkIdent)
+
+      let name = node[0].strVal
+      let params = params(node)
+      let returnParam = params[0]
+      let argParams = params[1..^1]
+      let procBody = node.findChild(it.kind == nnkStmtList)
+
+      let formattedBody = quote do:
+        do(`argParams`) -> `returnParam`:
+          `procBody`   
+]#
 
 {.pop.}
